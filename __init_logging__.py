@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 
 rotating_file_handler = logging.handlers.RotatingFileHandler(
     filename="yapple.log",

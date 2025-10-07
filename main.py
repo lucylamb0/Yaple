@@ -115,6 +115,9 @@ class YappleClient(commands.Bot):
             logger.info(f"Loaded {len(users)} users from file.")
         else:
             logger.info("No users file found, starting fresh.")
+        global wordOfTheDay
+        wordOfTheDay = getWordOfTheDay()
+        logger.info(f"Word of the day: {wordOfTheDay}")
 
     async def setup_hook(self):
         await self.add_cog(TimeCog(self))
@@ -122,6 +125,10 @@ class YappleClient(commands.Bot):
         self.tree.add_command(guess_command)
         self.tree.add_command(stats_command)
         self.tree.add_command(help_command)
+        self.tree.add_command(board_command)
+        self.tree.add_command(used_command)
+        test_guild = discord.Object(id=1034538537699266601)
+        await self.tree.sync(guild=test_guild)  # Sync commands globally
         await self.tree.sync()
 
     async def on_ready(self):
@@ -155,11 +162,14 @@ async def help_command(interaction: discord.Interaction):
         "Commands:\n`/yapple` - Get information about the bot.\n"
         "`/guess <guess>` - Make a guess in your current game.\n`"
         "/stats <user>` - View game statistics.\n"
+        "`/board` - Display your current board.\n"
+        "`/used` - Display your used letters.\n"
         "You can also use the command `/yapple` in any server channel to other people's attempts today")
 
 @app_commands.command(name="guess", description="Make a guess in your current game.")
 @app_commands.describe(guess="Your 5-letter guess")
 async def guess_command(interaction: discord.Interaction, guess: str):
+    global wordOfTheDay
     user_id = str(interaction.user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)
@@ -169,9 +179,10 @@ async def guess_command(interaction: discord.Interaction, guess: str):
         await interaction.response.send_message("You have already completed today's Wordle. Come back tomorrow!")
         return
     result = user.board.userGuess(guess)
-    await interaction.response.send_message(result)
     if user.board.is_complete:
         user.stats["games_played"] += 1
+        result += f"\nThe word was: {wordOfTheDay}"
+        await interaction.response.send_message(result, ephemeral=True)
         if user.board.current_row < 6:
             user.stats["current_streak"] += 1
             user.stats["max_streak"] = max(user.stats["max_streak"], user.stats["current_streak"])
@@ -179,6 +190,8 @@ async def guess_command(interaction: discord.Interaction, guess: str):
         else:
             user.stats["current_streak"] = 0
             user.stats["guess_distribution"][6] += 1
+    else:
+        await interaction.response.send_message(result)
     # Save users' boards to file
     with open("users.json", "w") as f:
         json.dump([user.to_dict() for user in users.values()], f)
@@ -193,6 +206,26 @@ async def stats_command(interaction: discord.Interaction, user: discord.User):
     user.check_date()
     stats_message = user.display_stats()
     await interaction.response.send_message(stats_message)
+
+@app_commands.command(name="board", description="Display your current board.")
+async def board_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id not in users:
+        users[user_id] = YappleUser(user_id)
+    user = users[user_id]
+    user.check_date()
+    board_display = user.board.display()
+    await interaction.response.send_message(board_display)
+
+@app_commands.command(name="used", description="Display your used letters.")
+async def used_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id not in users:
+        users[user_id] = YappleUser(user_id)
+    user = users[user_id]
+    user.check_date()
+    used_letters = ', '.join(sorted(user.board.used_letters))
+    await interaction.response.send_message(f"Used letters: {used_letters}", ephemeral=True)
 
 yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
 yapple.run(os.getenv("SECRET"))

@@ -22,6 +22,7 @@ class Board:
         self.current_row : int = 0
         self.is_complete = False
         self.date = datetime.date.today().isoformat()
+        self.used_letters = []
 
     def from_dict(data):
         board = Board()
@@ -68,6 +69,9 @@ class Board:
     def userGuess(self, guess):
         global usablewords
         global wordOfTheDay
+        for letter in guess:
+            if letter not in self.used_letters:
+                self.used_letters.append(letter)
 
         result = ""
         if wordOfTheDay is None:
@@ -87,7 +91,10 @@ class Board:
 
         current_row_no = self.current_row
         if current_row_no >= 6:
-            result = "No more attempts left. The game is over."
+            result = self.display()
+            start = "Wordle " + str(datetime.date.today()) + " X" + "/6\n"
+            result = start + result
+            result = result + "No more attempts left. The game is over."
             self.is_complete = True
             return result
 
@@ -98,6 +105,8 @@ class Board:
         self.__guess(guess)
         result = self.display()
         if self.is_complete:
+            start = "Wordle " + str(datetime.date.today()) + " "+ str(self.current_row) + "/6\n"
+            result = start + result
             result = result + "\nCongratulations! You've guessed the word correctly!"
             logging.debug(f"A user guessed the word {wordOfTheDay} correctly.")
             return result
@@ -145,7 +154,7 @@ class Board:
                 elif letter.status == self.Row.Letter.Status.ABSENT:
                     display_str += "⬛"
                 else:
-                    display_str += "     "
+                    display_str += ""
             display_str += "\n"
         return display_str
 

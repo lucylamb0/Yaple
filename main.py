@@ -109,7 +109,10 @@ class YappleClient(commands.Bot):
         users = {}
         if os.path.exists("users.json"):
             with open("users.json", "r") as f:
-                data = json.load(f)
+                if os.stat("users.json").st_size == 0:
+                    data = []
+                else:
+                    data = json.load(f)
                 for user in data:
                     users[user["user_id"]] = YappleUser.from_dict(user)
             logger.info(f"Loaded {len(users)} users from file.")

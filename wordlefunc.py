@@ -155,6 +155,7 @@ class Board:
                     display_str += "⬛"
                 else:
                     display_str += ""
+                    continue
             display_str += "\n"
         return display_str
 

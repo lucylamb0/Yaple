@@ -164,7 +164,7 @@ async def help_command(interaction: discord.Interaction):
     await interaction.response.send_message(
         "Commands:\n`/yapple` - Get information about the bot.\n"
         "`/guess <guess>` - Make a guess in your current game.\n`"
-        "/stats <user>` - View game statistics.\n"
+        "'/stats <user>` - View game statistics.\n"
         "`/board` - Display your current board.\n"
         "`/used` - Display your used letters.\n"
         "You can also use the command `/yapple` in any server channel to other people's attempts today")

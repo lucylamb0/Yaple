@@ -19,16 +19,16 @@ Yaple is a Discord bot that brings the Wordle game to your server. Users can pla
 - Discord account
 
 ### 1. Clone the repository
-`mkdir yaple`
-`cd yaple`
-`git clone https://github.com/lucylamb0/Yaple.git`
+`mkdir yaple`<br/>
+`cd yaple`<br/>
+`git clone https://github.com/lucylamb0/Yaple.git`<br/>
 
 ### 2. Create a `.env` file
 
 Add your Discord bot token to a file named `.env` in the project root: (SECRET="YOURTOKEN"):
 
 ### 3. Build and run the Docker container
-Use `docker build -t <bot_name>`
+Use:<br/>`docker build -t <bot_name>`<br/>
 `docker run <bot_name>`
 
 ## Discord Developer Portal Setup

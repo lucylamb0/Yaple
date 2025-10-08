@@ -1,5 +1,7 @@
-<img src="https://github.com/lucylamb0/Yaple/blob/master/assets/Yapple.png" width="75" /> 
-<h1>Yaple - Discord Wordle Bot</h1>
+<h1>
+   <img src="https://github.com/lucylamb0/Yaple/blob/master/assets/Yapple.png" width="75" /> 
+   Yaple - Discord Wordle Bot
+</h1>
 
 Yaple is a Discord bot that brings the Wordle game to your server. Users can play daily Wordle, track their stats, view their boards, and compare results with others. <br/>
 

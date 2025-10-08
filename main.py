@@ -70,6 +70,7 @@ class YappleUser:
             "stats": self.stats
         }
 
+    @staticmethod
     def from_dict(data):
         user = YappleUser(data["user_id"])
         user.board = Board.from_dict(data["board"])
@@ -117,9 +118,9 @@ class YappleClient(commands.Bot):
                     data = []
                 else:
                     data = json.load(f)
-                for user in data:
-                    users[user["user_id"]] = YappleUser.from_dict(user)
-                logger.info(f"Loaded {len(users)} users from file.")
+            for user in data:
+                users[user["user_id"]] = YappleUser.from_dict(user)
+            logger.info(f"Loaded {len(users)} users from file.")
         else:
             logger.info("No users file found, starting fresh.")
         wordOfTheDay = getWordOfTheDay()
@@ -144,6 +145,7 @@ class YappleClient(commands.Bot):
 
 @app_commands.command(name="yapple", description="Get information about the Yapple bot.")
 async def yapple_command(interaction: discord.Interaction):
+    global users
     if interaction.guild is None:
         await interaction.response.send_message(
             "Yapple is a Wordle bot. Use the command `/guess <guess>` in this dm to play. You can also use the command `/help` to get help.")
@@ -175,6 +177,7 @@ async def help_command(interaction: discord.Interaction):
 @app_commands.command(name="guess", description="Make a guess in your current game.")
 @app_commands.describe(guess="Your 5-letter guess")
 async def guess_command(interaction: discord.Interaction, guess: str):
+    global users
     user_id = str(interaction.user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)
@@ -204,6 +207,7 @@ async def guess_command(interaction: discord.Interaction, guess: str):
 @app_commands.command(name="stats", description="View game statistics.")
 @app_commands.describe(user="The user to view statistics for")
 async def stats_command(interaction: discord.Interaction, user: discord.User):
+    global users
     user_id = str(user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)
@@ -214,6 +218,7 @@ async def stats_command(interaction: discord.Interaction, user: discord.User):
 
 @app_commands.command(name="board", description="Display your current board.")
 async def board_command(interaction: discord.Interaction):
+    global users
     user_id = str(interaction.user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)
@@ -227,6 +232,7 @@ async def board_command(interaction: discord.Interaction):
 
 @app_commands.command(name="used", description="Display your used letters.")
 async def used_command(interaction: discord.Interaction):
+    global users
     user_id = str(interaction.user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)

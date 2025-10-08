@@ -25,6 +25,7 @@ class Board:
         self.used_letters = []
         self.solution = getWordOfTheDay()
 
+    @staticmethod
     def from_dict(data):
         board = Board()
         board.current_row = data.get("current_row", 0)

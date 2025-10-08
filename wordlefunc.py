@@ -69,9 +69,6 @@ class Board:
 
     def userGuess(self, guess):
         global usablewords
-        for letter in guess:
-            if letter not in self.used_letters:
-                self.used_letters.append(letter)
 
         result = ""
         if self.solution is None:
@@ -101,6 +98,10 @@ class Board:
         if guess not in usablewords:
             result = f"Your guess is not in the list of usable words. Please try again."
             return result
+
+        for letter in guess:
+            if letter not in self.used_letters:
+                self.used_letters.append(letter)
 
         self.__guess(guess)
         result = self.display()

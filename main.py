@@ -218,7 +218,7 @@ async def board_command(interaction: discord.Interaction):
     user = users[user_id]
     user.check_date()
     board_display = user.board.display()
-    if board_display is None:
+    if board_display is None or board_display.strip() == "":
         await interaction.response.send_message("No current game. Start a new game by making a guess with `/guess <word>`.", ephemeral=True)
         return
     await interaction.response.send_message(board_display)

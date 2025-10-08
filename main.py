@@ -241,6 +241,6 @@ async def used_command(interaction: discord.Interaction):
     used_letters = ', '.join(sorted(user.board.used_letters))
     await interaction.response.send_message(f"Used letters: {used_letters}", ephemeral=True)
 
-yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
 users = {}
+yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
 yapple.run(os.getenv("SECRET"))

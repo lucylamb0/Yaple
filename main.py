@@ -109,15 +109,17 @@ class YappleClient(commands.Bot):
         # Get users
         global users
         users = {}
+        logger.info("Loading users from file...")
         if os.path.exists("users.json"):
             with open("users.json", "r") as f:
                 if os.stat("users.json").st_size == 0:
+                    logger.info("Users file is empty.")
                     data = []
                 else:
                     data = json.load(f)
                 for user in data:
                     users[user["user_id"]] = YappleUser.from_dict(user)
-            logger.info(f"Loaded {len(users)} users from file.")
+                logger.info(f"Loaded {len(users)} users from file.")
         else:
             logger.info("No users file found, starting fresh.")
         wordOfTheDay = getWordOfTheDay()

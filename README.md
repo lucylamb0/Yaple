@@ -33,7 +33,7 @@ Use:<br/>`docker build -t <bot_name>`<br/>
 `docker run <bot_name>`
 
 ### 3 (Standalone).
-Run main.py
+Run main.py: <br/>
 `python3 main.py`
 
 ## Discord Developer Portal Setup

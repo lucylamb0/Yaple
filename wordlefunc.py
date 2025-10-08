@@ -23,6 +23,7 @@ class Board:
         self.is_complete = False
         self.date = datetime.date.today().isoformat()
         self.used_letters = []
+        self.solution = getWordOfTheDay()
 
     def from_dict(data):
         board = Board()
@@ -68,15 +69,14 @@ class Board:
 
     def userGuess(self, guess):
         global usablewords
-        global wordOfTheDay
         for letter in guess:
             if letter not in self.used_letters:
                 self.used_letters.append(letter)
 
         result = ""
-        if wordOfTheDay is None:
-            wordOfTheDay = getWordOfTheDay()
-        if wordOfTheDay is None:
+        if self.solution is None:
+            self.solution = getWordOfTheDay()
+        if self.solution is None:
             result = "Error fetching the word of the day."
             return result
 
@@ -108,15 +108,14 @@ class Board:
             start = "Wordle " + str(datetime.date.today()) + " "+ str(self.current_row) + "/6\n"
             result = start + result
             result = result + "\nCongratulations! You've guessed the word correctly!"
-            logging.debug(f"A user guessed the word {wordOfTheDay} correctly.")
+            logging.info(f"A user guessed the word {self.solution} correctly.")
             return result
         return result
 
 
     def __guess(self, word : str):
-        global wordOfTheDay
         # Validate input
-        if len(wordOfTheDay) != 5 or not wordOfTheDay.isalpha():
+        if len(self.solution) != 5 or not self.solution.isalpha():
             return
         if self.is_complete or self.current_row >= 6:
             return
@@ -124,15 +123,14 @@ class Board:
             return
 
         word = word.upper()
-        wordOfTheDay = wordOfTheDay.upper()
 
         for i in range(5):
             # Set the character and determine its status
             self.rows[self.current_row].state[i].char = word[i]
-            if word[i] == wordOfTheDay[i]:
+            if word[i] == self.solution[i]:
                 self.rows[self.current_row].state[i].status = self.Row.Letter.Status.CORRECT
                 self.rows[self.current_row].correct += 1
-            elif word[i] in wordOfTheDay:
+            elif word[i] in self.solution:
                 self.rows[self.current_row].state[i].status = self.Row.Letter.Status.PRESENT
                 self.rows[self.current_row].present += 1
             else:
@@ -177,8 +175,6 @@ class Board:
                 ABSENT = "absent"
 
 
-global wordOfTheDay
-wordOfTheDay = None
 def getWordOfTheDay():
     url = "https://www.nytimes.com/svc/wordle/v2/"+ str(datetime.date.today()) +".json"
     response = requests.get(url)

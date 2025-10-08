@@ -33,21 +33,23 @@ class TimeCog(commands.Cog):
         self.check_daily.start()
         logger.info("Daily check started.")
 
-    def seconds_until(self, hours, minutes):
-        given_time = datetime.time(hours, minutes)
+    def seconds_until_midnight(self):
         now = datetime.datetime.now()
-        future_exec = datetime.datetime.combine(now, given_time)
-        if (future_exec - now).days < 0:  # If we are past the execution, it will take place tomorrow
-            future_exec = datetime.datetime.combine(now + datetime.timedelta(days=1), given_time) # days always >= 0
-        return (future_exec - now).total_seconds()
+        midnight = (now + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        return (midnight - now).total_seconds()
+
 
     @tasks.loop(hours=24)
     async def check_daily(self):
-        await asyncio.sleep(self.seconds_until(11,58))
-        # This function will retrieve a new word every 24 hours
-        global wordOfTheDay
-        wordOfTheDay = getWordOfTheDay()
-        logger.info(f"New word of the day: {wordOfTheDay}")
+        await asyncio.sleep(self.seconds_until_midnight())
+        logger.info(f"New word of the day: {getWordOfTheDay()}")
+        logger.info("Resetting boards for all users.")
+        global users
+        for user in users.values():
+            user.check_date()
+        with open("users.json", "w") as f:
+            json.dump([user.to_dict() for user in users.values()], f)
+        logger.info("All boards reset.")
 
 
 class YappleUser:
@@ -83,6 +85,7 @@ class YappleUser:
             if self.board.date != (datetime.date.today() - datetime.timedelta(days=1)).isoformat():
                 self.stats["current_streak"] = 0
             self.board = Board()
+        return
 
     def display_stats(self):
         stats = self.stats
@@ -99,8 +102,7 @@ class YappleUser:
             stats_message += f"{i + 1}/6: {count}\n"
         return stats_message
 
-global users
-users = {}
+
 class YappleClient(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
@@ -118,7 +120,6 @@ class YappleClient(commands.Bot):
             logger.info(f"Loaded {len(users)} users from file.")
         else:
             logger.info("No users file found, starting fresh.")
-        global wordOfTheDay
         wordOfTheDay = getWordOfTheDay()
         logger.info(f"Word of the day: {wordOfTheDay}")
 
@@ -172,7 +173,6 @@ async def help_command(interaction: discord.Interaction):
 @app_commands.command(name="guess", description="Make a guess in your current game.")
 @app_commands.describe(guess="Your 5-letter guess")
 async def guess_command(interaction: discord.Interaction, guess: str):
-    global wordOfTheDay
     user_id = str(interaction.user.id)
     if user_id not in users:
         users[user_id] = YappleUser(user_id)
@@ -184,7 +184,7 @@ async def guess_command(interaction: discord.Interaction, guess: str):
     result = user.board.userGuess(guess)
     if user.board.is_complete:
         user.stats["games_played"] += 1
-        result += f"\nThe word was: {wordOfTheDay}"
+        result += f"\nThe word was: {user.board.solution}"
         await interaction.response.send_message(result, ephemeral=True)
         if user.board.current_row < 6:
             user.stats["current_streak"] += 1
@@ -218,6 +218,9 @@ async def board_command(interaction: discord.Interaction):
     user = users[user_id]
     user.check_date()
     board_display = user.board.display()
+    if board_display is None:
+        await interaction.response.send_message("No current game. Start a new game by making a guess with `/guess <word>`.", ephemeral=True)
+        return
     await interaction.response.send_message(board_display)
 
 @app_commands.command(name="used", description="Display your used letters.")
@@ -231,4 +234,5 @@ async def used_command(interaction: discord.Interaction):
     await interaction.response.send_message(f"Used letters: {used_letters}", ephemeral=True)
 
 yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
+users = {}
 yapple.run(os.getenv("SECRET"))

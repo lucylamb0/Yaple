@@ -1,6 +1,7 @@
 # Yaple - Discord Wordle Bot
 
-Yaple is a Discord bot that brings the Wordle game to your server. Users can play daily Wordle, track their stats, view their boards, and compare results with others.
+Yaple is a Discord bot that brings the Wordle game to your server. Users can play daily Wordle, track their stats, view their boards, and compare results with others. <br/>
+![image](https://github.com/lucylamb0/Yaple/tree/master/assets/yaple.png)
 
 ## Commands
 

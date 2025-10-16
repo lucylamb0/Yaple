@@ -75,7 +75,7 @@ class GuessModal(discord.ui.Modal, title="Make a private guess"):
         result = user.board.userGuess(guess_text)
         if user.board.is_complete:
             user.stats["games_played"] += 1
-            result += f"\nThe word was: {user.board.solution}"
+            #result += f"\nThe word was: {user.board.solution}"
             if user.board.current_row < 6:
                 user.stats["current_streak"] += 1
                 user.stats["max_streak"] = max(user.stats["max_streak"], user.stats["current_streak"])

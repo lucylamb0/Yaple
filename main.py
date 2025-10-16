@@ -52,6 +52,45 @@ class TimeCog(commands.Cog):
         logger.info("All boards reset.")
 
 
+class GuessModal(discord.ui.Modal, title="Make a private guess"):
+    guess = discord.ui.TextInput(
+        label="Your 5-letter guess",
+        style=discord.TextStyle.short,
+        min_length=1,
+        max_length=5,
+        placeholder="Enter your guess"
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        global users
+        user_id = str(interaction.user.id)
+        guess_text = self.guess.value.strip()
+        if user_id not in users:
+            users[user_id] = YappleUser(user_id)
+        user = users[user_id]
+        user.check_date()
+        if user.board.is_complete:
+            await interaction.response.send_message("You have already completed today's Wordle. Come back tomorrow!", ephemeral=True)
+            return
+        result = user.board.userGuess(guess_text)
+        if user.board.is_complete:
+            user.stats["games_played"] += 1
+            result += f"\nThe word was: {user.board.solution}"
+            if user.board.current_row < 6:
+                user.stats["current_streak"] += 1
+                user.stats["max_streak"] = max(user.stats["max_streak"], user.stats["current_streak"])
+                user.stats["guess_distribution"][user.board.current_row - 1] += 1
+            else:
+                user.stats["current_streak"] = 0
+                user.stats["guess_distribution"][6] += 1
+            await interaction.response.send_message(result, ephemeral=False)
+        else:
+            await interaction.response.send_message(result, ephemeral=False)
+        # Save users' boards to file
+        with open("users.json", "w") as f:
+            json.dump([user.to_dict() for user in users.values()], f)
+
+
 class YappleUser:
     def __init__(self, user_id):
         self.user_id = user_id
@@ -79,10 +118,12 @@ class YappleUser:
 
     def check_date(self):
         if self.board.date != datetime.date.today().isoformat():
-            if not self.board.is_complete:
+            if (not self.board.is_complete) and self.board.started:
                 self.stats["current_streak"] = 0
                 self.stats["games_played"] += 1
                 self.stats["guess_distribution"][6] += 1
+
+            # Only reset streak if the last game was not completed yesterday
             if self.board.date != (datetime.date.today() - datetime.timedelta(days=1)).isoformat():
                 self.stats["current_streak"] = 0
             self.board = Board()
@@ -175,34 +216,8 @@ async def help_command(interaction: discord.Interaction):
         "You can also use the command `/yapple` in any server channel to other people's attempts today")
 
 @app_commands.command(name="guess", description="Make a guess in your current game.")
-@app_commands.describe(guess="Your 5-letter guess")
-async def guess_command(interaction: discord.Interaction, guess: str):
-    global users
-    user_id = str(interaction.user.id)
-    if user_id not in users:
-        users[user_id] = YappleUser(user_id)
-    user = users[user_id]
-    user.check_date()
-    if user.board.is_complete:
-        await interaction.response.send_message("You have already completed today's Wordle. Come back tomorrow!")
-        return
-    result = user.board.userGuess(guess)
-    if user.board.is_complete:
-        user.stats["games_played"] += 1
-        result += f"\nThe word was: {user.board.solution}"
-        await interaction.response.send_message(result, ephemeral=True)
-        if user.board.current_row < 6:
-            user.stats["current_streak"] += 1
-            user.stats["max_streak"] = max(user.stats["max_streak"], user.stats["current_streak"])
-            user.stats["guess_distribution"][user.board.current_row - 1] += 1
-        else:
-            user.stats["current_streak"] = 0
-            user.stats["guess_distribution"][6] += 1
-    else:
-        await interaction.response.send_message(result)
-    # Save users' boards to file
-    with open("users.json", "w") as f:
-        json.dump([user.to_dict() for user in users.values()], f)
+async def guess_command(interaction: discord.Interaction):
+    await interaction.response.send_modal(GuessModal())
 
 @app_commands.command(name="stats", description="View game statistics.")
 @app_commands.describe(user="The user to view statistics for")
@@ -238,8 +253,10 @@ async def used_command(interaction: discord.Interaction):
         users[user_id] = YappleUser(user_id)
     user = users[user_id]
     user.check_date()
-    used_letters = ', '.join(sorted(user.board.used_letters))
-    await interaction.response.send_message(f"Used letters: {used_letters}", ephemeral=True)
+    correct_letters = ', '.join(sorted(user.board.correct_letters))
+    present_letters = ', '.join(sorted(user.board.present_letters))
+    absent_letters = ', '.join(sorted(user.board.absent_letters))
+    await interaction.response.send_message(f'```ansi\n[2;32mCorrect letters: {correct_letters}[0m\n[2;31mPresent letters: {present_letters}[0m\n[2;30mAbsent letters: {absent_letters}[0m```', ephemeral=True)
 
 users = {}
 yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())

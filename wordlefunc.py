@@ -23,7 +23,11 @@ class Board:
         self.is_complete = False
         self.date = datetime.date.today().isoformat()
         self.used_letters = []
+        self.present_letters = []
+        self.absent_letters = []
+        self.correct_letters = []
         self.solution = getWordOfTheDay()
+        self.started = False
 
     @staticmethod
     def from_dict(data):
@@ -32,6 +36,11 @@ class Board:
         board.is_complete = data.get("is_complete", False)
         board.date = data.get("date", datetime.date.today().isoformat())
         rows_data = data.get("rows", [])
+        board.used_letters = data.get("used_letters", [])
+        board.present_letters = data.get("present_letters", [])
+        board.absent_letters = data.get("absent_letters", [])
+        board.correct_letters = data.get("correct_letters", [])
+        board.solution = data.get("solution", None)
         for i in range(min(len(rows_data), 6)):
             row_data = rows_data[i]
             row = Board.Row()
@@ -53,6 +62,11 @@ class Board:
             "current_row": self.current_row,
             "is_complete": self.is_complete,
             "date": self.date,
+            "used_letters": self.used_letters,
+            "present_letters": self.present_letters,
+            "absent_letters": self.absent_letters,
+            "correct_letters": self.correct_letters,
+            "solution": self.solution,
             "rows": [
                 {
                     "correct": row.correct,
@@ -105,6 +119,7 @@ class Board:
                 self.used_letters.append(letter)
 
         self.__guess(guess)
+        self.started = True
         result = self.display()
         if self.is_complete:
             start = "Wordle " + str(datetime.date.today()) + " "+ str(self.current_row) + "/6\n"
@@ -130,12 +145,18 @@ class Board:
             # Set the character and determine its status
             self.rows[self.current_row].state[i].char = word[i]
             if word[i] == self.solution[i]:
+                if word[i] not in self.correct_letters:
+                    self.correct_letters.append(word[i])
                 self.rows[self.current_row].state[i].status = self.Row.Letter.Status.CORRECT
                 self.rows[self.current_row].correct += 1
             elif word[i] in self.solution:
+                if word[i] not in self.present_letters:
+                    self.present_letters.append(word[i])
                 self.rows[self.current_row].state[i].status = self.Row.Letter.Status.PRESENT
                 self.rows[self.current_row].present += 1
             else:
+                if word[i] not in self.absent_letters:
+                    self.absent_letters.append(word[i])
                 self.rows[self.current_row].state[i].status = self.Row.Letter.Status.ABSENT
                 self.rows[self.current_row].absent += 1
         if self.rows[self.current_row].correct == 5:

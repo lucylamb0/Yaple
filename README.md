@@ -8,7 +8,7 @@ Yaple is a Discord bot that brings the Wordle game to your server. Users can pla
 ## Commands
 
 - Daily Wordle game for each user
-- `/guess <word>`: Make a guess
+- `/guess`: Make a guess
 - `/board`: View your current board
 - `/stats <user>`: See yours or another user's stats
 - `/used`: See your used letters

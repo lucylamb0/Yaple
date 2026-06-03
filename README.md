@@ -29,15 +29,21 @@ Yaple is a Discord bot that brings the Wordle game to your server. Users can pla
 
 ### 2. Create a `.env` file
 
-Add your Discord bot token to a file named `.env` in the project root: (SECRET="YOURTOKEN"):
+Add your Discord bot token to a file named `.env` in the project root: (SECRET="YOURTOKEN"):<br/>
+`echo 'SECRET="<YOURTOKEN>"' >> .env `<br/>
 
 ### 3 (Docker). Build and run the Docker container
-Use:<br/>`docker build -t <bot_name>`<br/>
-`docker run <bot_name>`
+Use:<br/>`docker build . -t <bot_name>`<br/>
+`docker run --volume=<host_volume_dir>:/data <bot_name>`
 
 ### 3 (Standalone).
 Run main.py: <br/>
 `python3 main.py`
+`[OPTIONS]`
+<br/>
+Options:<br/>
+`-s --storage`: user data storage directory location. Default: working directory `${pwd}`<br/>
+`-f --filename`: filename of the user data. Default: `users.json`
 
 ## Discord Developer Portal Setup
 

@@ -7,18 +7,30 @@ import dotenv
 import json
 from wordlefunc import *
 import atexit
+import argparse
+import pathlib
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
+user_data_filename = "users.json"
+user_data_dir = ""
 
 def exit_handler():
     global users
     logging.info("Shutting down...")
-    with open("users.json", "w") as f:
+    with open(user_data_dir + user_data_filename, "w") as f:
         json.dump([user.to_dict() for user in users.values()], f)
     logging.shutdown()
 
-atexit.register(exit_handler)
+parser = argparse.ArgumentParser(
+    description="Discord Wordle bot. Use --help for arguments"
+)
+parser.add_argument('-s', '--storage',
+                    help="Storage directory location for user data eg. '/mnt/user_data'. If blank will output user data to the directory this script was run from",
+                    default="")
+parser.add_argument('-f' '--filename',
+                    help='Filename of user data, defaults to user_data',
+                    default="users.json")
 
 #Time Cog to handle daily getting new word
 class TimeCog(commands.Cog):
@@ -47,7 +59,7 @@ class TimeCog(commands.Cog):
         global users
         for user in users.values():
             user.check_date()
-        with open("users.json", "w") as f:
+        with open(user_data_dir + user_data_filename, "w") as f:
             json.dump([user.to_dict() for user in users.values()], f)
         logger.info("All boards reset.")
 
@@ -87,7 +99,7 @@ class GuessModal(discord.ui.Modal, title="Make a private guess"):
         else:
             await interaction.response.send_message(result, ephemeral=False)
         # Save users' boards to file
-        with open("users.json", "w") as f:
+        with open(user_data_dir + user_data_filename, "w") as f:
             json.dump([user.to_dict() for user in users.values()], f)
 
 
@@ -152,9 +164,9 @@ class YappleClient(commands.Bot):
         global users
         users = {}
         logger.info("Loading users from file...")
-        if os.path.exists("users.json"):
-            with open("users.json", "r") as f:
-                if os.stat("users.json").st_size == 0:
+        if os.path.exists(user_data_dir + user_data_filename):
+            with open(user_data_dir + user_data_filename, "r") as f:
+                if os.stat(user_data_dir + user_data_filename).st_size == 0:
                     logger.info("Users file is empty.")
                     data = []
                 else:
@@ -258,6 +270,26 @@ async def used_command(interaction: discord.Interaction):
     absent_letters = ', '.join(sorted(user.board.absent_letters))
     await interaction.response.send_message(f'```ansi\n[2;32mCorrect letters: {correct_letters}[0m\n[2;31mPresent letters: {present_letters}[0m\n[2;30mAbsent letters: {absent_letters}[0m```', ephemeral=True)
 
-users = {}
-yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
-yapple.run(os.getenv("SECRET"))
+if __name__ == "__main__":
+    args = parser.parse_args()
+    if args.s == "":
+        user_storage_path = pathlib.Path(pathlib.Path(os.getcwd()))
+    user_storage_path = pathlib.Path(args.s).expanduser()
+    if not user_storage_path.exists():
+        print("Storage location does not exist")
+        user_storage_path = pathlib.Path(pathlib.Path(os.getcwd()))
+        print(f"Using '{user_storage_path}' as data path")
+    elif not user_storage_path.is_dir():
+        print("Storage location is not a directory")
+        user_storage_path = pathlib.Path(pathlib.Path(os.getcwd()))
+        print(f"Using '{user_storage_path}' as data path")
+    user_data_dir = user_storage_path.as_posix() + "/"
+    user_data_filename = str(args.f)
+    if user_data_filename == "":
+        user_data_filename = "users.json"
+    if not user_data_filename.endswith(".json"):
+        user_data_filename += ".json"
+    atexit.register(exit_handler)
+    users = {}
+    yapple = YappleClient(command_prefix="/", intents=discord.Intents.all())
+    yapple.run(os.getenv("SECRET"))
